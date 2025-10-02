@@ -1,13 +1,20 @@
+# === PATH: utils.py ===
 import re
 from typing import Dict, Optional, Tuple
+import copy
 import streamlit as st
 
 # ============== OCR (opzionale; non blocca se assente) ==============
 try:
     import pytesseract  # opzionale
+    from PIL import Image
     _OCR_OK = True
+    # Imposta binario tesseract se necessario (Streamlit Cloud)
+    if not getattr(pytesseract.pytesseract, "tesseract_cmd", None):
+        pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 except Exception:
     pytesseract = None
+    Image = None
     _OCR_OK = False
 
 # ============== Chiavi statistiche in uso ============================
@@ -93,11 +100,13 @@ def reset_all():
 
 def get_block(section: str) -> Dict:
     ensure_session()
-    return st.session_state.stats.get(section, blank_stat_block())
+    # ritorna una copia modificabile per evitare side-effects strani
+    blk = st.session_state.stats.get(section, blank_stat_block())
+    return copy.deepcopy(blk)
 
 def set_block(section: str, data: Dict):
     ensure_session()
-    st.session_state.stats[section] = data
+    st.session_state.stats[section] = copy.deepcopy(data)
 
 # ============== Parser TESTO (incolla) =====================================
 PERCENT_RE = re.compile(r"(\d{1,3})\s*%")
@@ -111,35 +120,35 @@ def _norm(s: str) -> str:
 
 def _ratio_to_pct(t: str) -> Optional[int]:
     m = RATIO_RE.search(t)
-    if not m: return None
+    if not m:
+        return None
     a, b = int(m.group(1)), int(m.group(2))
-    if b == 0: return 0
+    if b == 0:
+        return 0
     return max(0, min(100, round(100*a/b)))
 
 def _two_values_after(lines, i, look_ahead=12):
     """Cerca due valori (A,B) entro ~12 righe dopo la label.
        Supporta: "67% (10/15)", "10/15", numero secco 0..100, "-" → 0."""
     vals = []
-    for j in range(i+1, min(i+1+look_ahead, len(lines))):
+    # considera ANCHE la riga della label (alcuni layout hanno i valori lì)
+    for j in range(i, min(i+1+look_ahead, len(lines))):
         raw = _norm(lines[j])
         if not raw:
             continue
         if DASH_ONLY_RE.match(raw):
             vals.append(0)
         else:
-            # due % sulla stessa riga
             allp = PERCENT_RE.findall(raw)
             if len(allp) >= 2:
                 vals.append(int(allp[0])); vals.append(int(allp[1]))
             elif len(allp) == 1:
                 vals.append(int(allp[0]))
             else:
-                # prova rapporto
                 pr = _ratio_to_pct(raw)
                 if pr is not None:
                     vals.append(pr)
                 else:
-                    # numero secco plausibile
                     m = re.search(r"\b(\d{1,3})\b", raw)
                     if m:
                         v = int(m.group(1))
@@ -177,11 +186,15 @@ def parse_stats_from_text(txt: str) -> Dict:
     return {"A": A, "B": B, "src": "pasted"}
 
 # ============== OCR (best-effort) ==========================================
-def parse_image_to_text(img) -> Tuple[str, bool]:
+def parse_image_to_text(img, lang: str = "eng+ita") -> Tuple[str, bool]:
+    """img: PIL.Image | bytes | numpy array. Ritorna (testo, ok)."""
     if not _OCR_OK:
         return "", False
     try:
-        txt = pytesseract.image_to_string(img)
+        if Image and not isinstance(img, Image.Image):
+            # converte in PIL se possibile
+            img = Image.fromarray(img) if hasattr(img, "shape") else Image.open(img)
+        txt = pytesseract.image_to_string(img, lang=lang)
         return txt, True
     except Exception:
         return "", False
@@ -237,11 +250,14 @@ def verdict_engine(A: Dict[str, Optional[int]], B: Dict[str, Optional[int]], con
 
 # ============== UI helper per editor =======================================
 def _norm_int(s: str) -> Optional[int]:
-    if s is None: return None
+    if s is None:
+        return None
     s = s.strip().lower()
-    if s in {"", "x"}: return None
+    if s in {"", "x"}:
+        return None
     if s.isdigit():
-        v = int(s); return max(0, min(100, v))
+        v = int(s)
+        return max(0, min(100, v))
     return None
 
 def render_stats_editor(block_key: str, title: str):
