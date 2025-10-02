@@ -1,5 +1,9 @@
 import streamlit as st
-from shim import ensure_session, render_match_or_set_form
+from utils import ensure_session, reset_all, render_stats_editor
 
 ensure_session()
-render_match_or_set_form(st.session_state.sets[4], "Set 4")
+st.title("🟣 Set 4")
+if st.button("🔄 Reset TOTALE", use_container_width=True):
+    reset_all(); st.success("Azzerato."); st.stop()
+
+render_stats_editor("set4", "Set 4")
