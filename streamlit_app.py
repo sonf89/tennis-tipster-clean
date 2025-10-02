@@ -20,10 +20,10 @@ st.title("🎾 Prediction Tennis Live")
 st.markdown("""
 Usa le pagine a sinistra:
 
-1) **🍽️ Match Generale** → dati complessivi (o inizio match)  
-2) **🟡/🔵/🔴/🟣/🔵 Set 1..5** → dati per set  
+1) **🏟️ Match Generale** → dati complessivi (o inizio match)   
+2) **🟡/🟠/🔴/🟣/🔵 Set 1..5** → dati per set  
 3) **🥎 Contesto Live** → formato, set in focus, score, server  
-4) **📷 BY COURT · OCR/Incolla** → screenshot o testo by-court  
+4) **🖼️ BY COURT · OCR/Incolla** → screenshot o testo by-court  
 5) **🧠 Analisi & Verdetti** → verdettone combinato
 
 Suggerimento: nelle pagine Match/Set puoi **incollare** il blocco “KEY STATS”.
