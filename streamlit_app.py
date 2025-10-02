@@ -1,18 +1,22 @@
 import streamlit as st
-from app_utils import ensure_session, reset_all
+from utils import ensure_session, reset_all
 
-st.set_page_config(page_title="Prediction Tennis Live", page_icon="🎾", layout="wide")
+st.set_page_config(
+    page_title="Prediction Tennis Live",
+    page_icon="🎾",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
 
 ensure_session()
 
-st.title("🎾 Prediction Tennis Live")
-st.caption("Home • usa le pagine a sinistra in ordine: 1) Match Generale → 7) Contesto Live → 8) BY-COURT (opz.) → 9) Analisi & Verdetti")
-
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("🔁 Rerun app"):
-        st.experimental_rerun()
-with col2:
-    if st.button("🧹 Reset TOTALE (tutte le pagine)"):
+with st.sidebar:
+    st.header("⚙️ Utility")
+    if st.button("🔄 Reset TOTALE", use_container_width=True):
         reset_all()
-        st.success("Fatto. Tutto azzerato.")
+        st.success("Sessione azzerata.")
+
+st.title("🎾 Prediction Tennis Live")
+st.caption("Usa le pagine in alto a sinistra (☰) per inserire i dati. "
+           "Ordine consigliato: **Match Generale → Set (1..5) → Contesto Live → BY-COURT → Analisi & Verdetti**.")
+st.info("I dati restano in memoria tra le pagine. Usa **Reset TOTALE** per ricominciare.")
